@@ -81,6 +81,29 @@
   justify-content: center;
 }
 
+/* Feedback messages */
+.tt-feedback {
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  font-weight: 700;
+  padding: 10px 24px;
+  border-radius: var(--radius-full);
+  text-align: center;
+  box-shadow: var(--shadow-card);
+}
+
+.tt-feedback--pass {
+  background: var(--color-green-light);
+  color: #2a7a56;
+  border: 2px solid var(--color-green);
+}
+
+.tt-feedback--fail {
+  background: var(--color-yellow-light);
+  color: #6b5200;
+  border: 2px solid var(--color-yellow);
+}
+
 /* Letter thumbnails */
 .tt-letter-list {
   display: flex;
@@ -127,6 +150,14 @@
   max-width: 520px;
 }
 
+.tt-path-hint {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--color-text-muted);
+  text-align: center;
+  margin: 0;
+}
+
 .tt-path-stage {
   position: relative;
   width: 100%;
@@ -138,6 +169,7 @@
   border: 3px dashed var(--color-green);
 }
 
+/* Static Pip at start */
 .tt-path-pip {
   position: absolute;
   top: 12%;
@@ -146,6 +178,16 @@
   pointer-events: none;
 }
 
+/* Animated Pip travelling along drawn path */
+.tt-path-pip-anim {
+  position: absolute;
+  z-index: 10;
+  pointer-events: none;
+  /* left/top driven inline by React state */
+  transition: none; /* animation handled by requestAnimationFrame */
+}
+
+/* Success / failure overlay */
 .tt-reached-msg {
   position: absolute;
   bottom: 16px;
@@ -160,6 +202,16 @@
   border-radius: var(--radius-full);
   white-space: nowrap;
   box-shadow: var(--shadow-card);
+}
+
+.tt-reached-msg--fail {
+  background: var(--color-lavender-light);
+  color: #4a3f8a;
+  border: 2px solid var(--color-lavender);
+  font-size: 0.95rem;
+  white-space: normal;
+  text-align: center;
+  max-width: 90%;
 }
 
 /* Responsive */
