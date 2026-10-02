@@ -1,0 +1,378 @@
+/* ================================================
+   LittlePath – Welcome Page
+   ================================================ */
+
+/* ── Page shell ── */
+.welcome-page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #dff0ff 0%, #eef7ff 28%, #fff9f0 60%);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Staggered intro animations ───────────────── */
+/* Before ready: everything is invisible/offset */
+.welcome-anim {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 500ms ease, transform 500ms ease;
+}
+
+.welcome-page--ready .welcome-anim--logo     { opacity: 1; transform: none; transition-delay: 0ms; }
+.welcome-page--ready .welcome-anim--tagline  { opacity: 1; transform: none; transition-delay: 80ms; }
+.welcome-page--ready .welcome-anim--pip      { opacity: 1; transform: none; transition-delay: 160ms; }
+.welcome-page--ready .welcome-anim--headline { opacity: 1; transform: none; transition-delay: 280ms; }
+.welcome-page--ready .welcome-anim--btn      { opacity: 1; transform: none; transition-delay: 380ms; }
+.welcome-page--ready .welcome-anim--pills    { opacity: 1; transform: none; transition-delay: 480ms; }
+
+/* ── Sky layer ── */
+.welcome-sky {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+/* Stars / sparkles around the sky */
+.w-star {
+  position: absolute;
+  font-size: 1rem;
+  color: #596FE8;
+  opacity: 0.25;
+  animation: sparkle 4s ease-in-out infinite;
+}
+.w-star--1 { top: 12%; left: 15%;  animation-delay: 0s; }
+.w-star--2 { top: 8%;  right: 18%; animation-delay: 1.2s; font-size: 0.8rem; }
+.w-star--3 { top: 18%; left: 40%;  animation-delay: 2.5s; font-size: 0.6rem; }
+
+@keyframes sparkle {
+  0%, 100% { opacity: 0.1; transform: scale(0.8); }
+  50%       { opacity: 0.5; transform: scale(1.2); }
+}
+
+/* Clouds */
+.w-cloud {
+  position: absolute;
+  font-size: 3.5rem;
+  opacity: 0.55;
+  animation: cloudDriftSlow linear infinite;
+}
+.w-cloud--1 { top: 6%;  left: -10%; animation-duration: 28s; font-size: 3rem; }
+.w-cloud--2 { top: 14%; left: -8%;  animation-duration: 22s; opacity: 0.4; }
+.w-cloud--3 { top: 4%;  left: -12%; animation-duration: 35s; font-size: 2.5rem; opacity: 0.3; }
+
+@keyframes cloudDriftSlow {
+  from { transform: translateX(0); }
+  to   { transform: translateX(120vw); }
+}
+
+/* ── Hills layer ── */
+.welcome-hills {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.w-hill {
+  position: absolute;
+  bottom: 0;
+  border-radius: 50% 50% 0 0;
+}
+
+.w-hill--far {
+  left: -10%;
+  right: -10%;
+  height: 180px;
+  background: #c5e8b0;
+  bottom: 80px;
+  opacity: 0.45;
+}
+
+.w-hill--mid {
+  left: -5%;
+  right: -5%;
+  height: 130px;
+  background: #a8d88a;
+  bottom: 60px;
+  opacity: 0.55;
+}
+
+/* ── Flora layer ── */
+.welcome-flora {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+  z-index: 2;
+  overflow: hidden;
+}
+
+.w-grass {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: linear-gradient(to top, #7dc866 0%, #9fd87a 40%, transparent 100%);
+}
+
+.w-flower {
+  position: absolute;
+  font-size: 2rem;
+  transform-origin: bottom center;
+  opacity: 0.85;
+  bottom: 48px;
+}
+.w-flower--1 { left: 4%;  font-size: 1.8rem; }
+.w-flower--2 { left: 14%; font-size: 2.2rem; bottom: 52px; }
+.w-flower--3 { left: 24%; font-size: 1.6rem; }
+.w-flower--4 { right: 8%; font-size: 2rem; }
+.w-flower--5 { right: 22%; font-size: 2.4rem; bottom: 55px; }
+
+.w-leaf {
+  position: absolute;
+  font-size: 1.8rem;
+  opacity: 0.5;
+}
+.w-leaf--1 { bottom: 70px; left: 37%; transform: rotate(25deg); }
+.w-leaf--2 { bottom: 65px; right: 34%; transform: rotate(-20deg); }
+
+/* ── Main content ── */
+.welcome-main {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 40px 24px 200px;
+  gap: 0;
+  max-width: 640px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ── Logo ── */
+.w-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.w-logo__icon {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.w-logo__text {
+  font-family: var(--font-heading);
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  letter-spacing: -0.01em;
+}
+
+/* ── Tagline ── */
+.w-tagline {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  letter-spacing: 0.03em;
+  margin-bottom: 28px;
+}
+
+/* ── Hero: Pip + sparkles ── */
+.w-hero {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.w-pip-glow {
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(169, 154, 238, 0.18) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.w-pip {
+  position: relative;
+  z-index: 2;
+  filter: drop-shadow(0 8px 20px rgba(89, 111, 232, 0.2));
+}
+
+/* Sparkles around Pip */
+.w-sparkles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.w-sparkle {
+  position: absolute;
+  font-size: 1.4rem;
+  animation: sparkle 3s ease-in-out infinite;
+}
+.w-sparkle--1 { top: 0;    left: 5%;  animation-delay: 0s; font-size: 1.6rem; }
+.w-sparkle--2 { top: 10%;  right: 0;  animation-delay: 0.8s; font-size: 1rem; }
+.w-sparkle--3 { bottom: 0; left: 10%; animation-delay: 1.6s; font-size: 1rem; }
+.w-sparkle--4 { bottom: 5%; right: 8%; animation-delay: 0.4s; font-size: 1.3rem; }
+
+/* ── Headline ── */
+.w-headline {
+  font-family: var(--font-heading);
+  font-size: clamp(2rem, 5vw, 2.8rem);
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 8px;
+  line-height: 1.15;
+}
+
+.w-subheadline {
+  font-family: var(--font-body);
+  font-size: clamp(0.95rem, 2.5vw, 1.1rem);
+  color: var(--color-text-muted);
+  font-weight: 600;
+  margin-bottom: 32px;
+  max-width: 340px;
+}
+
+/* ── Start Button ── */
+.w-start-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: white;
+  background: var(--color-primary);
+  border: none;
+  border-radius: 22px;
+  padding: 0 38px;
+  min-height: 64px;
+  cursor: pointer;
+  box-shadow: 0 6px 24px rgba(89, 111, 232, 0.35);
+  transition: transform 200ms ease, box-shadow 200ms ease;
+  margin-bottom: 28px;
+  letter-spacing: 0.01em;
+  width: 100%;
+  max-width: 320px;
+}
+
+.w-start-btn:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 10px 32px rgba(89, 111, 232, 0.45);
+}
+
+.w-start-btn:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 4px 16px rgba(89, 111, 232, 0.3);
+}
+
+.w-start-btn:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 4px;
+}
+
+.w-start-btn__arrow {
+  font-size: 1.4rem;
+  display: inline-block;
+  transition: transform 200ms ease;
+}
+
+.w-start-btn:hover .w-start-btn__arrow {
+  transform: translateX(4px);
+}
+
+/* ── Activity Pills ── */
+.w-pills {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.w-pill {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 16px;
+  padding: 12px 20px;
+  box-shadow: 0 2px 12px rgba(41, 54, 74, 0.08);
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+
+.w-pill:hover {
+  transform: translateY(-3px) rotate(-1deg);
+  box-shadow: 0 6px 18px rgba(41, 54, 74, 0.12);
+}
+
+.w-pill__icon {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.w-pill__label {
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .w-hero { margin-bottom: 20px; }
+}
+
+@media (max-width: 600px) {
+  .welcome-main {
+    padding: 32px 20px 180px;
+    gap: 0;
+  }
+
+  .w-start-btn {
+    max-width: 100%;
+    font-size: 1.2rem;
+    min-height: 60px;
+  }
+
+  .w-pill {
+    padding: 10px 16px;
+  }
+
+  .w-flower--3 { display: none; }
+  .w-flower--5 { display: none; }
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .welcome-anim {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .w-cloud { animation: none; }
+  .w-sparkle { animation: none; }
+  .w-star { animation: none; opacity: 0.2; }
+}

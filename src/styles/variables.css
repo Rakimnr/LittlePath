@@ -1,0 +1,54 @@
+/* ================================================
+   LittlePath – CSS Variables
+   ================================================ */
+
+:root {
+  /* Colors */
+  --color-bg: #FFF9F0;
+  --color-primary: #596FE8;
+  --color-green: #62C894;
+  --color-yellow: #FFD463;
+  --color-coral: #FF8F7E;
+  --color-lavender: #A99AEE;
+  --color-text: #29364A;
+  --color-white: #FFFFFF;
+
+  /* Derived tints */
+  --color-primary-light: #EEF1FD;
+  --color-green-light: #E8F9F1;
+  --color-yellow-light: #FFF8E6;
+  --color-coral-light: #FFF0EE;
+  --color-lavender-light: #F3F1FD;
+  --color-text-muted: #7A8BA4;
+  --color-border: #E8E0D5;
+
+  /* Typography */
+  --font-heading: 'Fredoka', sans-serif;
+  --font-body: 'Nunito', sans-serif;
+
+  /* Radius */
+  --radius-card: 24px;
+  --radius-btn: 18px;
+  --radius-sm: 12px;
+  --radius-full: 999px;
+
+  /* Shadows */
+  --shadow-card: 0 4px 20px rgba(41, 54, 74, 0.08);
+  --shadow-card-hover: 0 8px 32px rgba(41, 54, 74, 0.14);
+  --shadow-btn: 0 4px 12px rgba(89, 111, 232, 0.25);
+
+  /* Spacing */
+  --space-xs: 8px;
+  --space-sm: 16px;
+  --space-md: 24px;
+  --space-lg: 40px;
+  --space-xl: 64px;
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition-slow: 400ms ease;
+
+  /* Max width */
+  --max-width: 1100px;
+}

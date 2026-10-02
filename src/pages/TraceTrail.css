@@ -1,0 +1,169 @@
+.tt-page {
+  background: var(--color-bg);
+  min-height: 100vh;
+}
+
+.tt-progress {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background: var(--color-white);
+  border-radius: var(--radius-full);
+  padding: 6px 14px;
+  box-shadow: var(--shadow-card);
+}
+
+/* Main layout */
+.tt-main {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 24px;
+  padding-bottom: 60px;
+  gap: 24px;
+}
+
+/* Activity title */
+.tt-activity-title {
+  font-family: var(--font-heading);
+  font-size: clamp(1.4rem, 3.5vw, 2rem);
+  color: var(--color-text);
+  text-align: center;
+}
+
+/* ── Letter Tracing ─────────────────────────────── */
+.tt-letter-activity {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  max-width: 520px;
+}
+
+.tt-letter-display {
+  font-family: var(--font-heading);
+  font-size: 5rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  line-height: 1;
+  opacity: 0.9;
+}
+
+/* Canvas wrapper */
+.tt-canvas-wrapper {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: var(--color-white);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  border: 3px dashed var(--color-lavender);
+  position: relative;
+}
+
+.tt-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+/* Controls */
+.tt-controls {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Letter thumbnails */
+.tt-letter-list {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.tt-letter-thumb {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: var(--color-white);
+  box-shadow: var(--shadow-card);
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  border: 3px solid transparent;
+  transition: all 200ms ease;
+}
+
+.tt-letter-thumb--active {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  transform: scale(1.12);
+}
+
+.tt-letter-thumb--done {
+  border-color: var(--color-green);
+  font-size: 1.2rem;
+}
+
+/* ── Butterfly Path ───────────────────────────────── */
+.tt-path-activity {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+  max-width: 520px;
+}
+
+.tt-path-stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: linear-gradient(160deg, #EEF9FF 0%, #E8F9F1 100%);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  border: 3px dashed var(--color-green);
+}
+
+.tt-path-pip {
+  position: absolute;
+  top: 12%;
+  left: 6%;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.tt-reached-msg {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-yellow);
+  color: var(--color-text);
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  font-weight: 700;
+  padding: 10px 22px;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+  box-shadow: var(--shadow-card);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .tt-letter-display { font-size: 3.5rem; }
+  .tt-letter-thumb { width: 44px; height: 44px; font-size: 1.2rem; }
+}

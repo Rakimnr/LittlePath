@@ -1,0 +1,186 @@
+.sg-page {
+  background: linear-gradient(180deg, #fff8f0 0%, #f0f9f4 100%);
+  min-height: 100vh;
+}
+
+/* Background decorations */
+.sg-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.sg-bg__flower {
+  position: absolute;
+  font-size: 2.5rem;
+  transform-origin: bottom center;
+  opacity: 0.5;
+}
+.sg-bg__flower--1 { bottom: 60px; left: 6%; }
+.sg-bg__flower--2 { bottom: 40px; right: 8%; font-size: 2rem; }
+
+.sg-bg__note {
+  position: absolute;
+  font-size: 3rem;
+  color: var(--color-lavender);
+  opacity: 0.1;
+  font-family: serif;
+}
+.sg-bg__note--1 { top: 25%; left: 4%; }
+.sg-bg__note--2 { top: 40%; right: 5%; }
+.sg-bg__note--3 { top: 60%; left: 10%; font-size: 2rem; }
+
+/* Main */
+.sg-main {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  padding-top: 28px;
+  padding-bottom: 80px;
+}
+
+/* Progress dots */
+.sg-dots {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.sg-dot {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--color-border);
+  border: none;
+  cursor: pointer;
+  transition: background 200ms ease, transform 200ms ease;
+  padding: 0;
+}
+
+.sg-dot--active {
+  background: var(--color-primary);
+  transform: scale(1.4);
+}
+
+.sg-dot--done {
+  background: var(--color-green);
+}
+
+.sg-dot:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Card */
+.sg-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--color-white);
+  border-radius: var(--radius-card);
+  box-shadow: 0 6px 28px rgba(41, 54, 74, 0.1);
+  padding: 40px 32px 36px;
+  border-top: 6px solid var(--card-color, #596FE8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+/* Letter */
+.sg-letter {
+  font-family: var(--font-heading);
+  font-size: 7rem;
+  font-weight: 700;
+  line-height: 1;
+  transition: transform 200ms ease;
+}
+
+/* Emoji / picture */
+.sg-emoji {
+  font-size: 5.5rem;
+  line-height: 1;
+  transition: transform 300ms ease;
+}
+
+.sg-emoji--playing {
+  animation: emojiPop 0.35s ease;
+}
+
+@keyframes emojiPop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.2) rotate(5deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+/* Word */
+.sg-word {
+  font-family: var(--font-heading);
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+/* Audio section */
+.sg-audio-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* Sound wave decorations */
+.sg-waves {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.sg-wave {
+  font-size: 1.2rem;
+  color: var(--card-color, #596FE8);
+  opacity: 0.35;
+  font-family: monospace;
+  font-weight: 700;
+  transition: opacity 200ms ease;
+  display: inline-block;
+}
+
+.sg-wave--1 { font-size: 0.9rem; opacity: 0.2; }
+.sg-wave--2 { font-size: 1.1rem; opacity: 0.3; }
+.sg-wave--3 { font-size: 1.3rem; opacity: 0.4; }
+
+/* When audio is active, waves light up */
+.sg-audio-wrapper:has(.audio-btn--active) .sg-wave {
+  opacity: 0.7;
+  animation: wavePulse 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes wavePulse {
+  from { opacity: 0.3; transform: scaleY(0.8); }
+  to   { opacity: 0.8; transform: scaleY(1.2); }
+}
+
+/* Navigation */
+.sg-nav {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 380px;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .sg-letter { font-size: 5rem; }
+  .sg-emoji  { font-size: 4rem; }
+  .sg-word   { font-size: 1.6rem; }
+  .sg-card   { padding: 28px 20px; }
+  .sg-waves  { display: none; }
+}

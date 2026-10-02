@@ -1,0 +1,45 @@
+.activity-card {
+  background: var(--color-white);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-md);
+  transition: transform 200ms ease, box-shadow 200ms ease;
+  position: relative;
+  border: 3px solid transparent;
+}
+
+.activity-card--clickable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.activity-card--clickable:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.activity-card--clickable:active {
+  transform: scale(0.97);
+}
+
+.activity-card--clickable:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 3px;
+}
+
+.activity-card--selected {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.activity-card--correct {
+  border-color: var(--color-green);
+  background: var(--color-green-light);
+  animation: fadeInScale 0.3s ease both;
+}
+
+.activity-card--wrong {
+  border-color: var(--color-coral);
+  background: var(--color-coral-light);
+  animation: shake 0.4s ease;
+}
