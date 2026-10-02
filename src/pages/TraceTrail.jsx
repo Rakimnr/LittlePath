@@ -6,111 +6,409 @@ import './TraceTrail.css';
 
 const ACTIVITIES = ['letter', 'path'];
 
-// ── Guide-point definitions for letters ────────────────────────────────────
-// Points are expressed as [cx, cy] fractions of canvas width/height.
-// They mark the structural skeleton of each letter.
-const LETTER_GUIDES = {
-  A: [
-    [0.50, 0.10], // apex
-    [0.35, 0.35], // left upper-mid
-    [0.26, 0.55], // left mid
-    [0.20, 0.78], // left foot
-    [0.38, 0.55], // crossbar left
-    [0.50, 0.55], // crossbar centre
-    [0.62, 0.55], // crossbar right
-    [0.65, 0.35], // right upper-mid
-    [0.74, 0.55], // right mid
-    [0.80, 0.78], // right foot
-  ],
-  B: [
-    [0.25, 0.12], // top-left
-    [0.25, 0.35], // upper-left mid
-    [0.25, 0.50], // waist
-    [0.25, 0.65], // lower-left mid
-    [0.25, 0.88], // bottom-left
-    [0.48, 0.12], // top-right upper bowl
-    [0.60, 0.22], // upper bowl right
-    [0.60, 0.38], // upper bowl bottom
-    [0.48, 0.50], // waist right
-    [0.62, 0.60], // lower bowl right
-    [0.62, 0.76], // lower bowl bottom
-    [0.48, 0.88], // bottom-right
-  ],
-  C: [
-    [0.72, 0.20], // top right
-    [0.55, 0.10], // top mid
-    [0.38, 0.15], // top left
-    [0.25, 0.30], // left upper
-    [0.20, 0.50], // left mid
-    [0.25, 0.70], // left lower
-    [0.38, 0.85], // bottom left
-    [0.55, 0.90], // bottom mid
-    [0.72, 0.80], // bottom right
-  ],
-  D: [
-    [0.28, 0.12], // top-left
-    [0.28, 0.35], // left upper-mid
-    [0.28, 0.50], // left mid
-    [0.28, 0.65], // left lower-mid
-    [0.28, 0.88], // bottom-left
-    [0.45, 0.12], // top-right
-    [0.60, 0.22], // right upper bowl
-    [0.68, 0.38], // right mid upper
-    [0.70, 0.50], // right apex
-    [0.68, 0.62], // right mid lower
-    [0.60, 0.78], // right lower bowl
-    [0.45, 0.88], // bottom-right
-  ],
-  E: [
-    [0.70, 0.12], // top-right
-    [0.28, 0.12], // top-left
-    [0.28, 0.35], // left upper-mid
-    [0.28, 0.50], // left mid
-    [0.28, 0.65], // left lower-mid
-    [0.28, 0.88], // bottom-left
-    [0.62, 0.88], // bottom-right
-    [0.55, 0.50], // mid bar right
-    [0.28, 0.50], // mid bar left (already covered)
-  ],
-  F: [
-    [0.70, 0.12], // top-right
-    [0.28, 0.12], // top-left
-    [0.28, 0.35], // left upper-mid
-    [0.28, 0.50], // left mid
-    [0.58, 0.50], // mid bar right
-    [0.28, 0.65], // left lower-mid
-    [0.28, 0.88], // bottom-left
-  ],
+// ═══════════════════════════════════════════════════════════════════════════════
+// SHARED LETTER GUIDE DEFINITIONS
+// ═══════════════════════════════════════════════════════════════════════════════
+//
+// All coordinates are normalised [0, 1] fractions of canvas width / height.
+//
+// Each letter entry has:
+//   segments – Named polylines whose concatenation forms the letter strokes.
+//              These EXACT same paths drive both:
+//                • the visible dashed guide drawn on the canvas, AND
+//                • the validation geometry (checkpoint coverage + on-path check).
+//              There is no separate "validation checkpoint" list — one source of
+//              truth means the child always traces exactly what is validated.
+//
+//   anchors  – A small set of spatially-unique key positions.
+//              ALL anchors must be reached by the drawn stroke to accept it.
+//              They are chosen to maximally discriminate this letter from the
+//              other letters likely to appear on the same canvas (e.g. A's
+//              bottom-right foot is far outside B's stroke area).
+//
+// ═══════════════════════════════════════════════════════════════════════════════
+const LETTER_DEFS = {
+
+  A: {
+    segments: [
+      // Left diagonal: apex → bottom-left foot
+      {
+        id: 'left',
+        points: [[0.50,0.11],[0.43,0.29],[0.36,0.48],[0.28,0.68],[0.19,0.87]],
+      },
+      // Right diagonal: apex → bottom-right foot
+      {
+        id: 'right',
+        points: [[0.50,0.11],[0.57,0.29],[0.64,0.48],[0.72,0.68],[0.81,0.87]],
+      },
+      // Horizontal crossbar
+      {
+        id: 'bar',
+        points: [[0.30,0.55],[0.42,0.55],[0.50,0.55],[0.58,0.55],[0.70,0.55]],
+      },
+    ],
+    // Critical discriminating anchors for A:
+    //  • Apex (top-centre)          – neither B nor a circle goes here at (0.50, 0.11)
+    //  • Left foot (bottom-left)    – B's vertical barely reaches here
+    //  • Right foot (bottom-right)  – B never reaches x≈0.81 at y≈0.87
+    //  • Crossbar centre            – a circle never crosses (0.50, 0.55)
+    anchors: [
+      [0.50, 0.11],
+      [0.19, 0.87],
+      [0.81, 0.87],
+      [0.50, 0.55],
+    ],
+  },
+
+  B: {
+    segments: [
+      // Left vertical spine
+      {
+        id: 'vert',
+        points: [[0.27,0.12],[0.27,0.30],[0.27,0.50],[0.27,0.70],[0.27,0.88]],
+      },
+      // Upper bowl (closes at waist)
+      {
+        id: 'upper',
+        points: [[0.27,0.12],[0.47,0.12],[0.62,0.21],[0.65,0.33],[0.55,0.43],[0.27,0.50]],
+      },
+      // Lower bowl (closes at bottom)
+      {
+        id: 'lower',
+        points: [[0.27,0.50],[0.51,0.51],[0.67,0.63],[0.68,0.75],[0.54,0.84],[0.27,0.88]],
+      },
+    ],
+    anchors: [
+      [0.27, 0.12],
+      [0.27, 0.88],
+      [0.27, 0.50],
+      [0.63, 0.27],
+      [0.65, 0.68],
+    ],
+  },
+
+  C: {
+    segments: [
+      // Open arc from top-right, around the left, to bottom-right
+      {
+        id: 'arc',
+        points: [
+          [0.72,0.24],[0.62,0.13],[0.50,0.11],[0.36,0.15],
+          [0.23,0.28],[0.19,0.50],[0.23,0.72],[0.36,0.85],
+          [0.50,0.89],[0.62,0.87],[0.72,0.76],
+        ],
+      },
+    ],
+    anchors: [
+      [0.50, 0.11],
+      [0.19, 0.50],
+      [0.50, 0.89],
+      [0.72, 0.24],
+      [0.72, 0.76],
+    ],
+  },
+
+  D: {
+    segments: [
+      // Left vertical spine
+      {
+        id: 'vert',
+        points: [[0.27,0.12],[0.27,0.30],[0.27,0.50],[0.27,0.70],[0.27,0.88]],
+      },
+      // Right curve
+      {
+        id: 'curve',
+        points: [
+          [0.27,0.12],[0.47,0.12],[0.63,0.22],[0.70,0.36],
+          [0.72,0.50],[0.70,0.64],[0.63,0.78],[0.47,0.88],[0.27,0.88],
+        ],
+      },
+    ],
+    anchors: [
+      [0.27, 0.12],
+      [0.27, 0.88],
+      [0.72, 0.50],
+      [0.27, 0.50],
+    ],
+  },
+
+  E: {
+    segments: [
+      // Left vertical spine
+      {
+        id: 'vert',
+        points: [[0.27,0.12],[0.27,0.35],[0.27,0.50],[0.27,0.65],[0.27,0.88]],
+      },
+      // Top bar
+      { id: 'top',    points: [[0.27,0.12],[0.45,0.12],[0.63,0.12],[0.72,0.12]] },
+      // Middle bar
+      { id: 'mid',    points: [[0.27,0.50],[0.40,0.50],[0.58,0.50]] },
+      // Bottom bar
+      { id: 'bottom', points: [[0.27,0.88],[0.45,0.88],[0.63,0.88],[0.72,0.88]] },
+    ],
+    anchors: [
+      [0.27, 0.12],
+      [0.27, 0.88],
+      [0.65, 0.12],
+      [0.65, 0.88],
+      [0.50, 0.50],
+    ],
+  },
+
+  F: {
+    segments: [
+      // Left vertical spine
+      {
+        id: 'vert',
+        points: [[0.27,0.12],[0.27,0.35],[0.27,0.50],[0.27,0.65],[0.27,0.88]],
+      },
+      // Top bar
+      { id: 'top', points: [[0.27,0.12],[0.45,0.12],[0.63,0.12],[0.72,0.12]] },
+      // Middle bar
+      { id: 'mid', points: [[0.27,0.50],[0.40,0.50],[0.58,0.50]] },
+    ],
+    anchors: [
+      [0.27, 0.12],
+      [0.27, 0.88],
+      [0.65, 0.12],
+      [0.50, 0.50],
+    ],
+  },
 };
 
-// Generate fallback guides for any letter not in the map above
-function getFallbackGuide(letter) {
-  // Generic: 6 points for a diagonal Z-shape — won't perfectly match any letter
-  // but is better than nothing. Unknown letters mostly get wrong strokes and fail.
-  return [
-    [0.30, 0.15], [0.50, 0.20], [0.70, 0.15],
-    [0.50, 0.50],
-    [0.30, 0.85], [0.50, 0.80], [0.70, 0.85],
-  ];
+// ── Validation thresholds ─────────────────────────────────────────────────────
+// All kept generous — users are nursery / Grade-1 / Grade-2 children.
+const COVERAGE_TOL  = 0.12;  // checkpoint hit radius: 12 % of min(w,h)
+const ANCHOR_TOL    = 0.12;  // anchor hit radius:     12 % of min(w,h)
+const ON_PATH_TOL   = 0.15;  // on-path corridor:      15 % of min(w,h) (half-width)
+const SEG_MIN_COV   = 0.40;  // each segment needs ≥ 40 % of its points hit
+const ON_PATH_RATIO = 0.58;  // ≥ 58 % of sampled drawn points must be inside corridor
+const MIN_STROKE_PX = 60;    // minimum cumulative drawn length in CSS pixels
+
+// ── Debug flag ────────────────────────────────────────────────────────────────
+// Set to true during development to visualise the guide geometry on canvas.
+// MUST remain false in the production UI.
+const TRACE_DEBUG = false;
+
+// ── Distance helpers ──────────────────────────────────────────────────────────
+
+/** Shortest distance (in px) from point P to line segment A→B. */
+function distToSeg(px, py, ax, ay, bx, by) {
+  const dx = bx - ax;
+  const dy = by - ay;
+  const lenSq = dx * dx + dy * dy;
+  if (lenSq === 0) return Math.hypot(px - ax, py - ay);
+  const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lenSq));
+  return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
 }
 
-function getGuidePoints(letter) {
-  return LETTER_GUIDES[letter.toUpperCase()] || getFallbackGuide(letter);
+/**
+ * Shortest distance from point P to the nearest SEGMENT of a polyline.
+ * Using segment distance (not point-to-point) gives a proper continuous
+ * corridor along the guide path, so a child tracing between guide points
+ * is correctly counted as "on path".
+ */
+function distToPolyline(px, py, pts) {
+  if (pts.length === 1) return Math.hypot(px - pts[0][0], py - pts[0][1]);
+  let best = Infinity;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const d = distToSeg(px, py, pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1]);
+    if (d < best) best = d;
+  }
+  return best;
 }
 
-// Tolerance radius as fraction of the smaller canvas dimension
-const LETTER_TOLERANCE = 0.095;
-const COVERAGE_THRESHOLD = 0.70; // 70% of guide points required
-const MIN_STROKES_PX = 40;       // total stroke length must exceed this (sum of deltas)
+// ── Guide rendering ───────────────────────────────────────────────────────────
 
-// ── TraceTrail root ─────────────────────────────────────────────────────────
+/**
+ * Render the visual dashed guide for `letter` onto `canvas`.
+ * Uses LETTER_DEFS as the single source of truth — the same geometry
+ * that validateLetter() will check against.
+ */
+function renderGuide(canvas, letter) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width;
+  const H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const def = LETTER_DEFS[letter.toUpperCase()];
+  if (!def) return;
+
+  const minDim = Math.min(W, H);
+
+  // Draw each segment: wide ghost corridor + dashed centre line
+  for (const seg of def.segments) {
+    const pts = seg.points.map(([nx, ny]) => [nx * W, ny * H]);
+
+    // ① Wide semi-transparent corridor — gives the child a generous target band
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+    ctx.strokeStyle = 'rgba(169, 154, 238, 0.13)';
+    ctx.lineWidth   = minDim * 0.22;
+    ctx.lineCap     = 'round';
+    ctx.lineJoin    = 'round';
+    ctx.setLineDash([]);
+    ctx.stroke();
+    ctx.restore();
+
+    // ② Dashed centre line — shows the exact guide path to follow
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+    ctx.strokeStyle = 'rgba(169, 154, 238, 0.58)';
+    ctx.lineWidth   = 3.5;
+    ctx.lineCap     = 'round';
+    ctx.lineJoin    = 'round';
+    ctx.setLineDash([10, 10]);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // ── Debug overlay (TRACE_DEBUG = false in production) ──────────────────────
+  if (TRACE_DEBUG) {
+    // Green tint: on-path corridor at ON_PATH_TOL half-width
+    for (const seg of def.segments) {
+      const pts = seg.points.map(([nx, ny]) => [nx * W, ny * H]);
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(pts[0][0], pts[0][1]);
+      for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+      ctx.strokeStyle = 'rgba(60, 200, 80, 0.18)';
+      ctx.lineWidth   = minDim * ON_PATH_TOL * 2;
+      ctx.lineCap     = 'round';
+      ctx.lineJoin    = 'round';
+      ctx.setLineDash([]);
+      ctx.stroke();
+      ctx.restore();
+
+      // Blue dots: segment guide points
+      for (const [nx, ny] of seg.points) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(nx * W, ny * H, 4, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(60, 100, 255, 0.70)';
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    // Red dots + tolerance circles: anchor points
+    for (const [nx, ny] of def.anchors) {
+      const ax = nx * W;
+      const ay = ny * H;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(ax, ay, 7, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(220, 40, 40, 0.85)';
+      ctx.fill();
+      ctx.restore();
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(ax, ay, minDim * ANCHOR_TOL, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(220, 40, 40, 0.25)';
+      ctx.lineWidth   = 1.5;
+      ctx.setLineDash([4, 4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
+  }
+}
+
+// ── Letter validation ─────────────────────────────────────────────────────────
+
+/**
+ * Returns true when `points` constitutes a reasonable tracing of `letter`.
+ *
+ * FOUR sequential gates — all must pass:
+ *
+ *  1. MINIMUM STROKE  – rejects taps and tiny scribbles.
+ *
+ *  2. PER-SEGMENT COVERAGE  – every structural stroke of the letter must be
+ *     visited (≥ SEG_MIN_COV of each segment's guide points hit within
+ *     COVERAGE_TOL).  A drawing that skips one whole stroke fails here.
+ *
+ *  3. CRITICAL ANCHOR CHECK  – ALL of the letter's spatially-unique anchor
+ *     positions must be hit within ANCHOR_TOL.  Anchors are chosen so that
+ *     common wrong letters cannot reach them all.  In particular, A's
+ *     bottom-right foot (x≈0.81, y≈0.87) is unreachable by B, C, or circles.
+ *
+ *  4. ON-PATH ACCURACY  – uses SEGMENT DISTANCE (not point-to-point), giving
+ *     a proper continuous corridor along each guide stroke.  At least
+ *     ON_PATH_RATIO of the sub-sampled drawn points must lie within ON_PATH_TOL
+ *     of the nearest guide segment.  This rejects random canvas-wide scribbles
+ *     that accidentally clip enough guide points to pass gates 2–3.
+ *
+ * Tolerances are set generously throughout so natural child imperfection passes.
+ */
+function validateLetter(canvas, points, totalLength, letter) {
+  const { width: W, height: H } = canvas;
+  const minDim = Math.min(W, H);
+
+  // Gate 1 — minimum meaningful stroke
+  if (points.length < 5 || totalLength < MIN_STROKE_PX) return false;
+
+  const def = LETTER_DEFS[letter.toUpperCase()];
+  if (!def) return true; // unknown letter — be lenient
+
+  const coverTol  = minDim * COVERAGE_TOL;
+  const anchorTol = minDim * ANCHOR_TOL;
+  const pathTol   = minDim * ON_PATH_TOL;
+
+  // Precompute guide geometry in absolute canvas pixels
+  const absSeg = def.segments.map(seg => ({
+    id:  seg.id,
+    abs: seg.points.map(([nx, ny]) => [nx * W, ny * H]),
+  }));
+  const absAnchors = def.anchors.map(([nx, ny]) => [nx * W, ny * H]);
+
+  // Gate 2 — per-segment coverage
+  for (const seg of absSeg) {
+    let hit = 0;
+    for (const [gx, gy] of seg.abs) {
+      if (points.some(([px, py]) => Math.hypot(px - gx, py - gy) <= coverTol)) hit++;
+    }
+    if (hit / seg.abs.length < SEG_MIN_COV) return false;
+  }
+
+  // Gate 3 — critical anchor check (ALL anchors must be hit)
+  for (const [ax, ay] of absAnchors) {
+    if (!points.some(([px, py]) => Math.hypot(px - ax, py - ay) <= anchorTol)) return false;
+  }
+
+  // Gate 4 — on-path accuracy via segment distance
+  // Sub-sample up to 150 points evenly so long straight strokes don't dominate
+  const MAX_SAMPLE = 150;
+  const stride  = points.length <= MAX_SAMPLE ? 1 : Math.floor(points.length / MAX_SAMPLE);
+  const sample  = points.filter((_, i) => i % stride === 0);
+
+  let onPath = 0;
+  for (const [px, py] of sample) {
+    let nearest = Infinity;
+    for (const seg of absSeg) {
+      const d = distToPolyline(px, py, seg.abs);
+      if (d < nearest) nearest = d;
+    }
+    if (nearest <= pathTol) onPath++;
+  }
+
+  return onPath / sample.length >= ON_PATH_RATIO;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TraceTrail root
+// ═══════════════════════════════════════════════════════════════════════════════
 export default function TraceTrail({ data, onComplete, onHome }) {
   const [activityIndex, setActivityIndex] = useState(0);
   const activity = ACTIVITIES[activityIndex];
 
   const handleNextActivity = () => {
     if (activityIndex < ACTIVITIES.length - 1) {
-      setActivityIndex((i) => i + 1);
+      setActivityIndex(i => i + 1);
     } else {
       onComplete();
     }
@@ -140,165 +438,123 @@ export default function TraceTrail({ data, onComplete, onHome }) {
   );
 }
 
-// ── Letter Tracing ──────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// LetterTracing
+// ═══════════════════════════════════════════════════════════════════════════════
 function LetterTracing({ letters, onDone }) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [feedback, setFeedback] = useState(null); // null | 'pass' | 'fail'
+  const [feedback, setFeedback]         = useState(null); // null | 'pass' | 'fail'
   const canvasRef = useRef(null);
 
-  // Drawing state kept in refs (no re-render needed during draw)
+  // Drawing state kept in refs — no re-render during active draw
   const isDrawing = useRef(false);
-  const lastPos = useRef({ x: 0, y: 0 });
-  const strokePoints = useRef([]);    // all sampled points [[x,y],…]
-  const totalLength = useRef(0);      // cumulative stroke length in px
+  const lastPos   = useRef({ x: 0, y: 0 });
+  const strokePts = useRef([]);   // [[x, y], …] in canvas pixels
+  const totalLen  = useRef(0);    // cumulative stroke length in px
 
   const currentItem = letters[currentIndex];
-  const isLast = currentIndex === letters.length - 1;
+  const isLast      = currentIndex === letters.length - 1;
 
-  // ── Reset all drawing state ────────────────────────────────────────────
+  // ── Full reset of all drawing state ─────────────────────────────────────────
   const resetDrawing = useCallback(() => {
     isDrawing.current = false;
-    lastPos.current = { x: 0, y: 0 };
-    strokePoints.current = [];
-    totalLength.current = 0;
+    lastPos.current   = { x: 0, y: 0 };
+    strokePts.current = [];
+    totalLen.current  = 0;
     setFeedback(null);
   }, []);
 
-  // ── Draw the faint guide letter ─────────────────────────────────────────
-  const drawGuideLetter = useCallback((canvas, letter) => {
-    const ctx = canvas.getContext('2d');
-    const { width, height } = canvas;
-    ctx.clearRect(0, 0, width, height);
-    ctx.save();
-    ctx.font = `bold ${Math.min(width, height) * 0.62}px Fredoka, sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    // Ghost fill
-    ctx.fillStyle = 'rgba(169, 154, 238, 0.14)';
-    ctx.fillText(letter, width / 2, height / 2);
-    // Dotted stroke
-    ctx.strokeStyle = 'rgba(169, 154, 238, 0.30)';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([8, 8]);
-    ctx.strokeText(letter, width / 2, height / 2);
-    ctx.setLineDash([]);
-    ctx.restore();
-  }, []);
-
+  // ── Clear button: redraw guide and reset stroke data ────────────────────────
   const clearCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    drawGuideLetter(canvas, currentItem);
+    renderGuide(canvas, currentItem);
     resetDrawing();
-  }, [currentItem, drawGuideLetter, resetDrawing]);
+  }, [currentItem, resetDrawing]);
 
-  // ── Resize + redraw guide ──────────────────────────────────────────────
+  // ── Canvas resize: re-render guide and reset on every dimension change ───────
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const parent = canvas.parentElement;
+
     const resize = () => {
-      const rect = parent.getBoundingClientRect();
-      canvas.width = rect.width;
+      const rect    = parent.getBoundingClientRect();
+      canvas.width  = rect.width;
       canvas.height = rect.height;
-      drawGuideLetter(canvas, currentItem);
+      renderGuide(canvas, currentItem);
       resetDrawing();
     };
+
     resize();
     window.addEventListener('resize', resize);
     return () => window.removeEventListener('resize', resize);
-  }, [currentItem, drawGuideLetter, resetDrawing]);
+  }, [currentItem, resetDrawing]);
 
-  // ── Pointer position helper ────────────────────────────────────────────
-  const getPos = (e, canvas) => {
-    const rect = canvas.getBoundingClientRect();
-    const src = e.touches ? e.touches[0] : e;
+  // ── Pointer position helper ──────────────────────────────────────────────────
+  // Uses Pointer Events API (works for mouse, touch, stylus).
+  // Converts clientX/Y → canvas-pixel coordinates consistently with the
+  // canvas.width / canvas.height set in the resize handler above.
+  const getPos = (e) => {
+    const canvas = canvasRef.current;
+    const rect   = canvas.getBoundingClientRect();
     return {
-      x: (src.clientX - rect.left) * (canvas.width / rect.width),
-      y: (src.clientY - rect.top) * (canvas.height / rect.height),
+      x: (e.clientX - rect.left) * (canvas.width  / rect.width),
+      y: (e.clientY - rect.top)  * (canvas.height / rect.height),
     };
   };
 
-  // ── Pointer events ─────────────────────────────────────────────────────
-  const startDraw = useCallback((e) => {
+  // ── Pointer events ───────────────────────────────────────────────────────────
+  const onPointerDown = useCallback((e) => {
     e.preventDefault();
     isDrawing.current = true;
-    const pos = getPos(e, canvasRef.current);
-    lastPos.current = pos;
-    strokePoints.current.push([pos.x, pos.y]);
-    totalLength.current = 0;
+    const pos         = getPos(e);
+    lastPos.current   = pos;
+    strokePts.current.push([pos.x, pos.y]);
+    totalLen.current = 0;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const draw = useCallback((e) => {
+  const onPointerMove = useCallback((e) => {
     if (!isDrawing.current) return;
     e.preventDefault();
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    const pos = getPos(e, canvas);
 
-    // Render stroke
+    const canvas = canvasRef.current;
+    const ctx    = canvas.getContext('2d');
+    const pos    = getPos(e);
+
+    // Draw the child's stroke in blue
     ctx.beginPath();
     ctx.moveTo(lastPos.current.x, lastPos.current.y);
     ctx.lineTo(pos.x, pos.y);
     ctx.strokeStyle = '#596FE8';
-    ctx.lineWidth = 9;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
+    ctx.lineWidth   = 9;
+    ctx.lineCap     = 'round';
+    ctx.lineJoin    = 'round';
     ctx.stroke();
 
-    // Accumulate
-    const dx = pos.x - lastPos.current.x;
-    const dy = pos.y - lastPos.current.y;
-    totalLength.current += Math.hypot(dx, dy);
-    strokePoints.current.push([pos.x, pos.y]);
+    // Accumulate points and length
+    totalLen.current += Math.hypot(pos.x - lastPos.current.x, pos.y - lastPos.current.y);
+    strokePts.current.push([pos.x, pos.y]);
     lastPos.current = pos;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const endDraw = useCallback(() => {
+  const onPointerUp = useCallback(() => {
     isDrawing.current = false;
   }, []);
 
-  // ── Validation ────────────────────────────────────────────────────────
-  const validateTracing = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return false;
-    const { width, height } = canvas;
-    const points = strokePoints.current;
-    const totalLen = totalLength.current;
-
-    // Must have drawn something substantial
-    if (points.length < 5 || totalLen < MIN_STROKES_PX) return false;
-
-    const guide = getGuidePoints(currentItem);
-    const tol = Math.min(width, height) * LETTER_TOLERANCE;
-    let covered = 0;
-
-    for (const [gx, gy] of guide) {
-      const ax = gx * width;
-      const ay = gy * height;
-      // Check if any stroke point is within tolerance of this guide point
-      const hit = points.some(([px, py]) => Math.hypot(px - ax, py - ay) <= tol);
-      if (hit) covered++;
-    }
-
-    const coverage = covered / guide.length;
-    return coverage >= COVERAGE_THRESHOLD;
-  }, [currentItem]);
-
-  // ── Done button handler ────────────────────────────────────────────────
+  // ── Validate on Done button press ─────────────────────────────────────────
   const handleDone = () => {
-    const passed = validateTracing();
-    if (passed) {
-      setFeedback('pass');
-    } else {
-      setFeedback('fail');
-    }
+    const canvas = canvasRef.current;
+    const passed = validateLetter(canvas, strokePts.current, totalLen.current, currentItem);
+    setFeedback(passed ? 'pass' : 'fail');
   };
 
-  // ── Advance after pass ─────────────────────────────────────────────────
+  // ── Advance to next letter (or finish) after a pass ───────────────────────
   const handleAdvance = () => {
     if (!isLast) {
-      setCurrentIndex((i) => i + 1);
+      setCurrentIndex(i => i + 1);
     } else {
       onDone();
     }
@@ -316,17 +572,17 @@ function LetterTracing({ letters, onDone }) {
         <canvas
           ref={canvasRef}
           className="tt-canvas"
-          onPointerDown={startDraw}
-          onPointerMove={draw}
-          onPointerUp={endDraw}
-          onPointerLeave={endDraw}
-          onPointerCancel={endDraw}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerLeave={onPointerUp}
+          onPointerCancel={onPointerUp}
           aria-label={`Drawing area for tracing letter ${currentItem}`}
           role="img"
         />
       </div>
 
-      {/* Feedback message */}
+      {/* Feedback — never harsh red; warm pass / gentle nudge fail */}
       {feedback === 'pass' && (
         <div className="tt-feedback tt-feedback--pass anim-star">
           Great tracing! ⭐
@@ -343,7 +599,7 @@ function LetterTracing({ letters, onDone }) {
           Clear
         </PrimaryButton>
 
-        {/* If passed, show Advance. Otherwise show Validate ("Done") */}
+        {/* After a pass: show the advance button. Before pass: show validate. */}
         {feedback === 'pass' ? (
           <PrimaryButton
             variant={isLast ? 'green' : 'primary'}
@@ -378,12 +634,14 @@ function LetterTracing({ letters, onDone }) {
   );
 }
 
-// ── Butterfly Path Activity ─────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// ButterflyPath  (unchanged from previous implementation)
+// ═══════════════════════════════════════════════════════════════════════════════
 //
-// Pip starts at top-left (~12%, 22% of canvas). Flower is at (80%, 72%).
-// START zone radius = 11% of min(w,h).  FLOWER zone radius = 10% of min(w,h).
+// Pip starts at top-left (~12 %, 22 % of canvas). Flower is at (80 %, 72 %).
+// START zone radius = 11 % of min(w,h).  FLOWER zone radius = 10 % of min(w,h).
 //
-const PIP_ZONE   = { rx: 0.12, ry: 0.22, r: 0.11 };
+const PIP_ZONE    = { rx: 0.12, ry: 0.22, r: 0.11 };
 const FLOWER_ZONE = { rx: 0.80, ry: 0.72, r: 0.10 };
 const MIN_PATH_LENGTH = 0.35; // minimum path length as fraction of diagonal
 
@@ -391,20 +649,20 @@ function ButterflyPath({ onDone }) {
   const canvasRef = useRef(null);
 
   // Drawing refs (no re-render during draw)
-  const isDrawing = useRef(false);
-  const lastPos = useRef({ x: 0, y: 0 });
+  const isDrawing    = useRef(false);
+  const lastPos      = useRef({ x: 0, y: 0 });
   const strokePoints = useRef([]);
-  const totalLength = useRef(0);
+  const totalLength  = useRef(0);
   const startedInPip = useRef(false);
 
   // React state
-  const [feedback, setFeedback] = useState(null); // null | 'pass' | 'fail'
+  const [feedback,  setFeedback]  = useState(null); // null | 'pass' | 'fail'
   const [animating, setAnimating] = useState(false);
-  const [pipPos, setPipPos] = useState(null); // {x, y} in px while animating
+  const [pipPos,    setPipPos]    = useState(null);  // {x, y} CSS px while animating
 
   const animFrameRef = useRef(null);
 
-  // ── Draw the static scene (dotted path + flower) ────────────────────────
+  // ── Draw the static scene (dotted path + flower) ──────────────────────────
   const drawScene = useCallback((canvas) => {
     const ctx = canvas.getContext('2d');
     const { width, height } = canvas;
@@ -426,32 +684,32 @@ function ButterflyPath({ onDone }) {
 
     // Flower emoji
     ctx.font = `${Math.min(width, height) * 0.13}px serif`;
-    ctx.textAlign = 'center';
+    ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('🌸', width * FLOWER_ZONE.rx, height * FLOWER_ZONE.ry);
 
-    // Start zone hint (subtle circle around Pip's start)
+    // Start zone hint (subtle dashed circle around Pip's start)
     ctx.beginPath();
     ctx.arc(
-      width * PIP_ZONE.rx,
+      width  * PIP_ZONE.rx,
       height * PIP_ZONE.ry,
       Math.min(width, height) * PIP_ZONE.r,
       0, Math.PI * 2
     );
     ctx.strokeStyle = 'rgba(89, 111, 232, 0.20)';
-    ctx.lineWidth = 2;
+    ctx.lineWidth   = 2;
     ctx.setLineDash([4, 6]);
     ctx.stroke();
     ctx.setLineDash([]);
   }, []);
 
-  // ── Full reset ────────────────────────────────────────────────────────────
+  // ── Full reset ─────────────────────────────────────────────────────────────
   const resetAll = useCallback(() => {
     if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-    isDrawing.current = false;
-    lastPos.current = { x: 0, y: 0 };
+    isDrawing.current    = false;
+    lastPos.current      = { x: 0, y: 0 };
     strokePoints.current = [];
-    totalLength.current = 0;
+    totalLength.current  = 0;
     startedInPip.current = false;
     setFeedback(null);
     setAnimating(false);
@@ -460,14 +718,14 @@ function ButterflyPath({ onDone }) {
     if (canvas) drawScene(canvas);
   }, [drawScene]);
 
-  // ── Canvas resize ─────────────────────────────────────────────────────────
+  // ── Canvas resize ──────────────────────────────────────────────────────────
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const parent = canvas.parentElement;
     const resize = () => {
-      const rect = parent.getBoundingClientRect();
-      canvas.width = rect.width;
+      const rect    = parent.getBoundingClientRect();
+      canvas.width  = rect.width;
       canvas.height = rect.height;
       drawScene(canvas);
       resetAll();
@@ -480,147 +738,136 @@ function ButterflyPath({ onDone }) {
     };
   }, [drawScene, resetAll]);
 
-  // ── Coordinate helper ─────────────────────────────────────────────────────
+  // ── Coordinate helper ──────────────────────────────────────────────────────
   const getPos = (e, canvas) => {
     const rect = canvas.getBoundingClientRect();
-    const src = e.touches ? e.touches[0] : e;
+    const src  = e.touches ? e.touches[0] : e;
     return {
-      x: (src.clientX - rect.left) * (canvas.width / rect.width),
-      y: (src.clientY - rect.top) * (canvas.height / rect.height),
+      x: (src.clientX - rect.left) * (canvas.width  / rect.width),
+      y: (src.clientY - rect.top)  * (canvas.height / rect.height),
     };
   };
 
-  // ── Zone checks ────────────────────────────────────────────────────────────
+  // ── Zone check ─────────────────────────────────────────────────────────────
   const inZone = (pos, zone, canvas) => {
     const { width, height } = canvas;
-    const cx = width * zone.rx;
+    const cx = width  * zone.rx;
     const cy = height * zone.ry;
-    const r = Math.min(width, height) * zone.r;
+    const r  = Math.min(width, height) * zone.r;
     return Math.hypot(pos.x - cx, pos.y - cy) <= r;
   };
 
-  // ── Pointer down ─────────────────────────────────────────────────────────
+  // ── Pointer down ───────────────────────────────────────────────────────────
   const startDraw = useCallback((e) => {
     e.preventDefault();
     if (feedback === 'pass' || animating) return;
 
     const canvas = canvasRef.current;
-    const pos = getPos(e, canvas);
+    const pos    = getPos(e, canvas);
 
     if (!inZone(pos, PIP_ZONE, canvas)) {
-      // Started outside Pip — don't begin a valid attempt
+      // Started outside Pip — this attempt cannot succeed
       startedInPip.current = false;
-      isDrawing.current = false;
+      isDrawing.current    = false;
       return;
     }
 
-    startedInPip.current = true;
-    isDrawing.current = true;
-    lastPos.current = pos;
-    strokePoints.current = [[pos.x, pos.y]];
-    totalLength.current = 0;
+    startedInPip.current    = true;
+    isDrawing.current       = true;
+    lastPos.current         = pos;
+    strokePoints.current    = [[pos.x, pos.y]];
+    totalLength.current     = 0;
     setFeedback(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [feedback, animating]);
 
-  // ── Pointer move ──────────────────────────────────────────────────────────
+  // ── Pointer move ───────────────────────────────────────────────────────────
   const draw = useCallback((e) => {
     if (!isDrawing.current || !startedInPip.current) return;
     e.preventDefault();
+
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    const pos = getPos(e, canvas);
+    const ctx    = canvas.getContext('2d');
+    const pos    = getPos(e, canvas);
 
     ctx.beginPath();
     ctx.moveTo(lastPos.current.x, lastPos.current.y);
     ctx.lineTo(pos.x, pos.y);
     ctx.strokeStyle = '#FFD463';
-    ctx.lineWidth = 7;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
+    ctx.lineWidth   = 7;
+    ctx.lineCap     = 'round';
+    ctx.lineJoin    = 'round';
     ctx.globalAlpha = 0.8;
     ctx.stroke();
     ctx.globalAlpha = 1;
 
-    const dx = pos.x - lastPos.current.x;
-    const dy = pos.y - lastPos.current.y;
-    totalLength.current += Math.hypot(dx, dy);
+    totalLength.current += Math.hypot(pos.x - lastPos.current.x, pos.y - lastPos.current.y);
     strokePoints.current.push([pos.x, pos.y]);
     lastPos.current = pos;
   }, []);
 
-  // ── Pointer up / lift ─────────────────────────────────────────────────────
-  const endDraw = useCallback((e) => {
+  // ── Pointer up / lift ──────────────────────────────────────────────────────
+  const endDraw = useCallback(() => {
     if (!isDrawing.current) return;
     isDrawing.current = false;
 
-    if (!startedInPip.current) {
-      setFeedback('fail');
-      return;
-    }
+    if (!startedInPip.current) { setFeedback('fail'); return; }
 
     const canvas = canvasRef.current;
     const { width, height } = canvas;
     const points = strokePoints.current;
 
-    // Must have ended (last point) inside flower zone
     const lastPoint = points[points.length - 1];
     if (!lastPoint) { setFeedback('fail'); return; }
 
     const endedInFlower = inZone({ x: lastPoint[0], y: lastPoint[1] }, FLOWER_ZONE, canvas);
+    const diagonal      = Math.hypot(width, height);
+    const longEnough    = totalLength.current >= diagonal * MIN_PATH_LENGTH;
 
-    // Must have minimum path length
-    const diagonal = Math.hypot(width, height);
-    const longEnough = totalLength.current >= diagonal * MIN_PATH_LENGTH;
-
-    if (!endedInFlower || !longEnough) {
-      setFeedback('fail');
-      return;
-    }
+    if (!endedInFlower || !longEnough) { setFeedback('fail'); return; }
 
     // ✅ Success — animate Pip along the drawn path
     animatePip(points);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Animate Pip along stroke points ──────────────────────────────────────
+  // ── Animate Pip along stroke points ───────────────────────────────────────
   const animatePip = useCallback((points) => {
     if (points.length < 2) return;
     setAnimating(true);
     setFeedback(null);
 
     const canvas = canvasRef.current;
-    const rect = canvas.getBoundingClientRect();
+    const rect   = canvas.getBoundingClientRect();
 
     // Convert canvas coords → CSS px relative to stage
-    const scaleX = rect.width / canvas.width;
+    const scaleX = rect.width  / canvas.width;
     const scaleY = rect.height / canvas.height;
 
     // Subsample to ~40 waypoints for smooth animation
     const numWaypoints = Math.min(points.length, 40);
     const step = (points.length - 1) / (numWaypoints - 1);
     const waypoints = Array.from({ length: numWaypoints }, (_, i) => {
-      const idx = Math.round(i * step);
+      const idx    = Math.round(i * step);
       const [px, py] = points[Math.min(idx, points.length - 1)];
       return { x: px * scaleX, y: py * scaleY };
     });
 
     const DURATION = 1400; // ms
-    let startTime = null;
+    let startTime  = null;
     let rafId;
 
     const tick = (now) => {
       if (!startTime) startTime = now;
-      const t = Math.min((now - startTime) / DURATION, 1);
-      const waypointIdx = Math.floor(t * (waypoints.length - 1));
-      const wp = waypoints[Math.min(waypointIdx, waypoints.length - 1)];
+      const t          = Math.min((now - startTime) / DURATION, 1);
+      const wpIdx      = Math.floor(t * (waypoints.length - 1));
+      const wp         = waypoints[Math.min(wpIdx, waypoints.length - 1)];
       setPipPos({ x: wp.x, y: wp.y });
 
       if (t < 1) {
         rafId = requestAnimationFrame(tick);
         animFrameRef.current = rafId;
       } else {
-        // Animation complete
         setAnimating(false);
         setFeedback('pass');
       }
@@ -635,14 +882,14 @@ function ButterflyPath({ onDone }) {
       <p className="tt-path-hint">Draw a path from Pip to the flower 🌸</p>
 
       <div className="tt-path-stage">
-        {/* Static Pip (hidden during animation) */}
+        {/* Static Pip at start position (hidden while animating) */}
         {!animating && !feedback && (
           <div className="tt-path-pip">
             <Butterfly size={80} animate="float" />
           </div>
         )}
 
-        {/* Animated Pip travelling along the path */}
+        {/* Animated Pip travelling along the drawn path */}
         {(animating || feedback === 'pass') && pipPos && (
           <div
             className="tt-path-pip-anim"
